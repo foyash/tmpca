@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TMCPA · ENM 6210",
+  title: "TMCPA · EMGT 5220",
   description: "Team Member Contribution & Professionalism Assessment — Northeastern University",
 };
 

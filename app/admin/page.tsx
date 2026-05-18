@@ -154,7 +154,7 @@ export default async function AdminOverview({ searchParams }: Props) {
         <DeliverableSelect deliverables={dels} selectedId={currentDel.id} />
       </div>
       <p style={{ color: 'var(--ink-2)', marginBottom: 32, fontSize: 15 }}>
-        ENM 6210 · Spring 2026 · {teamList.length}{' '}
+        EMGT 5220 · Spring 2026 · {teamList.length}{' '}
         {teamList.length === 1 ? 'team' : 'teams'} · {studentList.length} students
         enrolled · {dels.length} {dels.length === 1 ? 'deliverable' : 'deliverables'}
       </p>

@@ -29,7 +29,7 @@ export function AdminTopBar() {
               textTransform: 'uppercase',
             }}
           >
-            Northeastern · ENM 6210
+            Northeastern · EMGT 5220
           </span>
         </div>
         <div className="flex items-center gap-3">

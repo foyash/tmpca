@@ -5,7 +5,7 @@
 create table course_config (
   id int primary key default 1,
   semester_label text not null default 'Spring 2026',
-  course_code text not null default 'ENM 6210',
+  course_code text not null default 'EMGT 5220',
   created_at timestamptz default now(),
   constraint single_row check (id = 1)
 );

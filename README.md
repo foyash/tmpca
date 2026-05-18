@@ -1,7 +1,7 @@
 # TMCPA
 
 Team Member Contribution & Professionalism Assessment — a peer-rating web app
-for Northeastern's ENM 6210 Engineering Management course.
+for Northeastern's EMGT 5220 Engineering Management course.
 
 Students anonymously rate teammates on Contribution and Professionalism for
 each course deliverable. The app adjusts each student's grade based on peer

@@ -1,6 +1,6 @@
 # TMCPA — Instructor Handoff
 
-**Course:** Northeastern University · ENM 6210 Engineering Management
+**Course:** Northeastern University · EMGT 5220 Engineering Management
 **Application:** Team Member Contribution & Professionalism Assessment
 
 This is the day-to-day guide for the instructor (Prof. Anderson). For
