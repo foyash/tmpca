@@ -94,9 +94,17 @@ export function RatingFlow({
     boundRatee.current = ratee.email;
   }, [ratee, ratings]);
 
+  // The current ratee counts as "rated" for Submit purposes — Submit calls
+  // saveCurrent() before submitting, so the row will exist by the time the
+  // POST hits the server. Without this, a user on the last teammate is
+  // trapped: they can't trigger a save (Save & Continue has nowhere to go)
+  // and Submit refuses to enable.
   const allRated = useMemo(
-    () => teamMembers.every((m) => ratings[m.email]?.hasContent),
-    [teamMembers, ratings],
+    () =>
+      teamMembers.every(
+        (m) => ratings[m.email]?.hasContent || m.email === ratee?.email,
+      ),
+    [teamMembers, ratings, ratee],
   );
 
   const saveCurrent = async (): Promise<boolean> => {
@@ -406,11 +414,15 @@ export function RatingFlow({
             </span>
             <button
               type="button"
-              onClick={() => goTo(idx + 1)}
-              disabled={idx === teamMembers.length - 1 || isPending}
+              onClick={() => {
+                if (idx === teamMembers.length - 1) saveCurrent();
+                else goTo(idx + 1);
+              }}
+              disabled={isPending}
               className="tmcpa-btn"
             >
-              Save &amp; Continue <ArrowRight size={14} />
+              {idx === teamMembers.length - 1 ? 'Save' : 'Save & Continue'}
+              <ArrowRight size={14} />
             </button>
           </div>
         </div>
