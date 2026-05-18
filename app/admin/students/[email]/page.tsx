@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { StatCard } from '@/components/ui/StatCard';
+import { StudentActions } from '@/components/admin/StudentActions';
 import { computeScore } from '@/lib/scoring';
 import type {
   DeliverableRow,
@@ -25,9 +26,14 @@ export default async function AdminStudentDetail({ params, searchParams }: Props
   const { deliverable: deliverableParam } = await searchParams;
 
   const supabase = getSupabaseAdmin();
-  const [{ data: student }, { data: deliverables }] = await Promise.all([
+  const [
+    { data: student },
+    { data: deliverables },
+    { data: allTeams },
+  ] = await Promise.all([
     supabase.from('students').select('*').eq('email', email).maybeSingle(),
     supabase.from('deliverables').select('*').order('number'),
+    supabase.from('teams').select('*').order('team_number'),
   ]);
 
   if (!student) notFound();
@@ -94,6 +100,13 @@ export default async function AdminStudentDetail({ params, searchParams }: Props
       >
         <ArrowLeft size={14} /> Back to {teamRow?.name ?? 'team'}
       </Link>
+
+      <StudentActions
+        studentEmail={studentRow.email}
+        studentName={studentRow.name}
+        currentTeamNumber={studentRow.team_number}
+        allTeams={(allTeams ?? []) as TeamRow[]}
+      />
 
       <div className="flex items-baseline justify-between mb-6">
         <div>

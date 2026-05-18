@@ -12,6 +12,7 @@ import { StudentTopBar } from '@/components/StudentTopBar';
 import { DeliverableStatusPill } from '@/components/ui/DeliverableStatusPill';
 import { Avatar } from '@/components/ui/Avatar';
 import { ScoreSparkline } from '@/components/student/ScoreSparkline';
+import { LeaveTeamButton } from '@/components/student/LeaveTeamButton';
 import { getCurrentStudent } from '@/lib/supabase/queries';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { computeScore } from '@/lib/scoring';
@@ -453,6 +454,8 @@ export default async function StudentDashboard() {
             )}
           </div>
         </div>
+
+        <LeaveTeamButton teamNumber={student.team_number} />
       </div>
     </>
   );
