@@ -415,13 +415,21 @@ export function RatingFlow({
             <button
               type="button"
               onClick={() => {
-                if (idx === teamMembers.length - 1) saveCurrent();
+                // Last teammate: mirror the top "Submit all ratings" button —
+                // saveCurrent + POST submit. Avoids the confusing "Save"
+                // label that looked like the final action but only persisted
+                // a draft. Earlier teammates: usual save + advance.
+                if (idx === teamMembers.length - 1) handleSubmit();
                 else goTo(idx + 1);
               }}
               disabled={isPending}
               className="tmcpa-btn"
             >
-              {idx === teamMembers.length - 1 ? 'Save' : 'Save & Continue'}
+              {idx === teamMembers.length - 1
+                ? isPending
+                  ? 'Submitting…'
+                  : 'Submit all ratings'
+                : 'Save & Continue'}
               <ArrowRight size={14} />
             </button>
           </div>
