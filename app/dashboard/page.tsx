@@ -74,29 +74,36 @@ export default async function StudentDashboard() {
   const gradeFor = (deliverableId: number) =>
     grades.find((g) => g.deliverable_id === deliverableId)?.grade ?? null;
 
-  const activeDel = dels.find((d) => d.status === 'open') ?? null;
+  const activeDels = dels.filter((d) => d.status === 'open');
   const aloneInTeam = memberList.length <= 1;
-
-  // Submission progress for active deliverable
-  const activeRaters = activeDel
-    ? new Set(
-        ratingList
-          .filter((r) => r.deliverable_id === activeDel.id && r.submitted)
-          .map((r) => r.rater_email),
-      )
-    : new Set<string>();
-  const myActiveSubmissions = activeDel
-    ? ratingList.filter(
-        (r) =>
-          r.rater_email === student.email &&
-          r.deliverable_id === activeDel.id &&
-          r.submitted,
-      ).length
-    : 0;
   const teamSize = memberList.length;
-  const haveSubmittedActive =
-    activeDel && teamSize > 0 ? myActiveSubmissions === teamSize : false;
-  const activeTeamSubmitted = activeRaters.size;
+
+  // Per-active-deliverable progress, computed once.
+  const activeProgress = activeDels.map((d) => {
+    const teamRaters = new Set(
+      ratingList
+        .filter((r) => r.deliverable_id === d.id && r.submitted)
+        .map((r) => r.rater_email),
+    );
+    const mySubs = ratingList.filter(
+      (r) =>
+        r.rater_email === student.email &&
+        r.deliverable_id === d.id &&
+        r.submitted,
+    ).length;
+    const haveSubmitted = teamSize > 0 ? mySubs === teamSize : false;
+    return {
+      deliverable: d,
+      teamRaters,
+      mySubs,
+      haveSubmitted,
+      teamSubmitted: teamRaters.size,
+    };
+  });
+
+  // The "primary" deliverable used by the team panel (earliest unfinished).
+  const primaryActive = activeProgress.find((p) => !p.haveSubmitted) ?? activeProgress[0] ?? null;
+  const pendingForMe = activeProgress.filter((p) => !p.haveSubmitted).length;
 
   // Per-deliverable score for me
   const scorePerDeliverable = dels.map((d) => {
@@ -136,100 +143,125 @@ export default async function StudentDashboard() {
               <strong>Team {student.team_number}</strong>. You&apos;ll be able to rate
               teammates once they register and join.
             </>
-          ) : activeDel && !haveSubmittedActive ? (
+          ) : pendingForMe > 0 ? (
             <>
               You have{' '}
               <strong style={{ color: 'var(--accent)' }}>
-                one active assessment
+                {pendingForMe === 1
+                  ? 'one active assessment'
+                  : `${pendingForMe} active assessments`}
               </strong>{' '}
               awaiting your ratings.
+            </>
+          ) : activeDels.length > 0 ? (
+            <>
+              All caught up. Waiting on teammates and team grades.
             </>
           ) : (
             <>No pending assessments. Check back when the next deliverable opens.</>
           )}
         </p>
 
-        {activeDel && !aloneInTeam && (
-          <div
-            className="tmcpa-card tmcpa-card-accent"
-            style={{ padding: 32, marginBottom: 32 }}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="label-tiny mb-1">Active Deliverable</div>
-                <h2 className="serif" style={{ fontSize: 28, lineHeight: 1.2 }}>
-                  #{activeDel.number} — {activeDel.name}
-                </h2>
-                <div style={{ fontSize: 13, color: 'var(--ink-2)', marginTop: 6 }}>
-                  <Clock
-                    size={12}
-                    style={{ display: 'inline', marginRight: 4, verticalAlign: -1 }}
-                  />
-                  Ratings close <strong>{formatDate(activeDel.deadline)}</strong>
+        {!aloneInTeam &&
+          activeProgress.map((ap) => {
+            const activeDel = ap.deliverable;
+            return (
+              <div
+                key={activeDel.id}
+                className={`tmcpa-card ${ap.haveSubmitted ? '' : 'tmcpa-card-accent'}`}
+                style={{ padding: 32, marginBottom: 24 }}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <div className="label-tiny mb-1">Active Deliverable</div>
+                    <h2
+                      className="serif"
+                      style={{ fontSize: 28, lineHeight: 1.2 }}
+                    >
+                      #{activeDel.number} — {activeDel.name}
+                    </h2>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: 'var(--ink-2)',
+                        marginTop: 6,
+                      }}
+                    >
+                      <Clock
+                        size={12}
+                        style={{
+                          display: 'inline',
+                          marginRight: 4,
+                          verticalAlign: -1,
+                        }}
+                      />
+                      Ratings close{' '}
+                      <strong>{formatDate(activeDel.deadline)}</strong>
+                    </div>
+                  </div>
+                  {ap.haveSubmitted ? (
+                    <span className="tmcpa-pill tmcpa-pill-good">
+                      <CheckCircle2 size={12} /> Submitted
+                    </span>
+                  ) : (
+                    <span className="tmcpa-pill tmcpa-pill-accent">
+                      Action Required
+                    </span>
+                  )}
                 </div>
-              </div>
-              {haveSubmittedActive ? (
-                <span className="tmcpa-pill tmcpa-pill-good">
-                  <CheckCircle2 size={12} /> Submitted
-                </span>
-              ) : (
-                <span className="tmcpa-pill tmcpa-pill-accent">
-                  Action Required
-                </span>
-              )}
-            </div>
-            <div
-              className="flex items-center"
-              style={{
-                marginTop: 24,
-                paddingTop: 24,
-                borderTop: '1px solid var(--line)',
-                gap: 24,
-              }}
-            >
-              <div style={{ flex: 1 }}>
-                <div className="label-tiny mb-1">Your Progress</div>
                 <div
-                  style={{ fontSize: 18, fontWeight: 600 }}
-                  className="mono tnum"
+                  className="flex items-center"
+                  style={{
+                    marginTop: 24,
+                    paddingTop: 24,
+                    borderTop: '1px solid var(--line)',
+                    gap: 24,
+                  }}
                 >
-                  {myActiveSubmissions} / {teamSize}
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                  teammates rated
+                  <div style={{ flex: 1 }}>
+                    <div className="label-tiny mb-1">Your Progress</div>
+                    <div
+                      style={{ fontSize: 18, fontWeight: 600 }}
+                      className="mono tnum"
+                    >
+                      {ap.mySubs} / {teamSize}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+                      teammates rated
+                    </div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div className="label-tiny mb-1">Team Submission</div>
+                    <div
+                      style={{ fontSize: 18, fontWeight: 600 }}
+                      className="mono tnum"
+                    >
+                      {ap.teamSubmitted} / {teamSize}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+                      members have submitted
+                    </div>
+                  </div>
+                  <div>
+                    {ap.haveSubmitted ? (
+                      <button className="tmcpa-btn" disabled>
+                        Ratings Submitted
+                      </button>
+                    ) : (
+                      <Link
+                        href={`/rate/${activeDel.id}`}
+                        className="tmcpa-btn"
+                        style={{ textDecoration: 'none' }}
+                      >
+                        {ap.mySubs > 0 ? 'Continue Rating' : 'Begin Ratings'}{' '}
+                        <ArrowRight size={14} />
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <div className="label-tiny mb-1">Team Submission</div>
-                <div
-                  style={{ fontSize: 18, fontWeight: 600 }}
-                  className="mono tnum"
-                >
-                  {activeTeamSubmitted} / {teamSize}
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                  members have submitted
-                </div>
-              </div>
-              <div>
-                {haveSubmittedActive ? (
-                  <button className="tmcpa-btn" disabled>
-                    Ratings Submitted
-                  </button>
-                ) : (
-                  <Link
-                    href={`/rate/${activeDel.id}`}
-                    className="tmcpa-btn"
-                    style={{ textDecoration: 'none' }}
-                  >
-                    {myActiveSubmissions > 0 ? 'Continue Rating' : 'Begin Ratings'}{' '}
-                    <ArrowRight size={14} />
-                  </Link>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+            );
+          })}
 
         <div
           style={{
@@ -394,9 +426,9 @@ export default async function StudentDashboard() {
             >
               {memberList.length}{' '}
               {memberList.length === 1 ? 'member' : 'members'}
-              {activeDel &&
+              {primaryActive &&
                 !aloneInTeam &&
-                ` · Deliverable ${activeDel.number} submission status`}
+                ` · Deliverable ${primaryActive.deliverable.number} submission status`}
             </p>
             {memberList.length === 0 ? (
               <p
@@ -412,8 +444,8 @@ export default async function StudentDashboard() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {memberList.map((m) => {
                   const isMe = m.email === student.email;
-                  const submitted = activeDel
-                    ? activeRaters.has(m.email)
+                  const submitted = primaryActive
+                    ? primaryActive.teamRaters.has(m.email)
                     : false;
                   return (
                     <div
@@ -437,7 +469,7 @@ export default async function StudentDashboard() {
                           )}
                         </div>
                       </div>
-                      {activeDel &&
+                      {primaryActive &&
                         !aloneInTeam &&
                         (submitted ? (
                           <CheckCircle2

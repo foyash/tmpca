@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { Avatar } from '@/components/ui/Avatar';
-import { computeScore } from '@/lib/scoring';
+import { computeScore, computeAverages } from '@/lib/scoring';
 import { TeamGradeEditor } from '@/components/admin/TeamGradeEditor';
 import type {
   DeliverableRow,
@@ -115,6 +115,12 @@ export default async function AdminTeamDetail({ params, searchParams }: Props) {
       (r) => r.ratee_email === email && r.submitted,
     );
     return computeScore(received, currentGrade);
+  };
+  const studentAverages = (email: string) => {
+    const received = ratingList.filter(
+      (r) => r.ratee_email === email && r.submitted,
+    );
+    return computeAverages(received);
   };
 
   return (
@@ -378,6 +384,7 @@ export default async function AdminTeamDetail({ params, searchParams }: Props) {
             </div>
             {memberList.map((m) => {
               const score = studentScore(m.email);
+              const avgs = studentAverages(m.email);
               const submitted = submittedRaters.has(m.email);
               return (
                 <Link
@@ -448,31 +455,19 @@ export default async function AdminTeamDetail({ params, searchParams }: Props) {
                         {score.individualScore.toFixed(1)}
                       </div>
                     </>
-                  ) : score && 'pending' in score ? (
+                  ) : avgs ? (
                     <>
-                      <div
-                        className="mono tnum"
-                        style={{ textAlign: 'right', color: 'var(--ink-3)' }}
-                      >
-                        ...
+                      <div className="mono tnum" style={{ textAlign: 'right' }}>
+                        {avgs.avgCont.toFixed(2)}
+                      </div>
+                      <div className="mono tnum" style={{ textAlign: 'right' }}>
+                        {avgs.avgProf.toFixed(2)}
                       </div>
                       <div
                         className="mono tnum"
-                        style={{ textAlign: 'right', color: 'var(--ink-3)' }}
+                        style={{ textAlign: 'right', fontWeight: 600 }}
                       >
-                        —
-                      </div>
-                      <div
-                        className="mono tnum"
-                        style={{ textAlign: 'right', color: 'var(--ink-3)' }}
-                      >
-                        —
-                      </div>
-                      <div
-                        className="mono tnum"
-                        style={{ textAlign: 'right', color: 'var(--ink-3)' }}
-                      >
-                        —
+                        {avgs.combined.toFixed(2)}
                       </div>
                       <div
                         style={{
@@ -481,7 +476,16 @@ export default async function AdminTeamDetail({ params, searchParams }: Props) {
                           color: 'var(--warn)',
                         }}
                       >
-                        Awaiting team grade
+                        Awaiting grade
+                      </div>
+                      <div
+                        style={{
+                          textAlign: 'right',
+                          fontSize: 11,
+                          color: 'var(--warn)',
+                        }}
+                      >
+                        Awaiting grade
                       </div>
                     </>
                   ) : (

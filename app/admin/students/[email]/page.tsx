@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { StatCard } from '@/components/ui/StatCard';
 import { StudentActions } from '@/components/admin/StudentActions';
-import { computeScore } from '@/lib/scoring';
+import { computeScore, computeAverages } from '@/lib/scoring';
 import type {
   DeliverableRow,
   RatingRow,
@@ -88,6 +88,8 @@ export default async function AdminStudentDetail({ params, searchParams }: Props
   const ratingList = (ratings ?? []) as RatingRow[];
   const currentGrade = (grade as TeamGradeRow | null)?.grade ?? null;
   const score = computeScore(ratingList, currentGrade);
+  const avgs = computeAverages(ratingList);
+  const hasFullScore = score && !('pending' in score);
 
   const backHref = `/admin/teams/${studentRow.team_number}?deliverable=${currentDel.id}`;
 
@@ -121,7 +123,7 @@ export default async function AdminStudentDetail({ params, searchParams }: Props
             {studentRow.email}
           </p>
         </div>
-        {score && !('pending' in score) && (
+        {hasFullScore ? (
           <div style={{ textAlign: 'right' }}>
             <div className="label-tiny">Individual Score</div>
             <div
@@ -131,10 +133,23 @@ export default async function AdminStudentDetail({ params, searchParams }: Props
               <span className="tnum">{score.individualScore.toFixed(1)}</span>
             </div>
           </div>
-        )}
+        ) : avgs ? (
+          <div style={{ textAlign: 'right' }}>
+            <div className="label-tiny">Combined</div>
+            <div
+              className="serif"
+              style={{ fontSize: 56, lineHeight: 1, color: 'var(--ink-2)' }}
+            >
+              <span className="tnum">{avgs.combined.toFixed(2)}</span>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--warn)', marginTop: 4 }}>
+              Final score awaits team grade
+            </div>
+          </div>
+        ) : null}
       </div>
 
-      {score && !('pending' in score) && (
+      {avgs && (
         <div
           style={{
             display: 'grid',
@@ -145,24 +160,32 @@ export default async function AdminStudentDetail({ params, searchParams }: Props
         >
           <StatCard
             label="Avg Contribution"
-            value={score.avgCont.toFixed(2)}
-            sub={`from ${score.ratingsReceived} raters`}
+            value={avgs.avgCont.toFixed(2)}
+            sub={`from ${avgs.ratingsReceived} raters`}
           />
           <StatCard
             label="Avg Professionalism"
-            value={score.avgProf.toFixed(2)}
-            sub={`from ${score.ratingsReceived} raters`}
+            value={avgs.avgProf.toFixed(2)}
+            sub={`from ${avgs.ratingsReceived} raters`}
           />
           <StatCard
             label="Combined"
-            value={score.combined.toFixed(2)}
+            value={avgs.combined.toFixed(2)}
             sub="(Cont + Prof) / 2"
           />
-          <StatCard
-            label="Adjustment"
-            value={`${score.adjustment >= 0 ? '+' : ''}${score.adjustment.toFixed(2)}`}
-            sub={`× ${score.multiplier} from baseline 4.5`}
-          />
+          {hasFullScore ? (
+            <StatCard
+              label="Adjustment"
+              value={`${score.adjustment >= 0 ? '+' : ''}${score.adjustment.toFixed(2)}`}
+              sub={`× ${score.multiplier} from baseline 4.5`}
+            />
+          ) : (
+            <StatCard
+              label="Adjustment"
+              value="—"
+              sub="Awaiting team grade"
+            />
+          )}
         </div>
       )}
 

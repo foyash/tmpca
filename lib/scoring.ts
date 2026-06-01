@@ -18,6 +18,28 @@ export type Score = {
   ratingsReceived: number;
 };
 
+/**
+ * Grade-independent partial: averages + combined. Always defined when there's
+ * at least one rating, regardless of whether the team grade is set. Used by
+ * admin views to surface what they can compute before the prof grades.
+ */
+export type Averages = {
+  avgCont: number;
+  avgProf: number;
+  combined: number; // (avgCont + avgProf) / 2
+  ratingsReceived: number;
+};
+
+export function computeAverages(received: Rating[]): Averages | null {
+  if (received.length === 0) return null;
+  const avgCont =
+    received.reduce((s, r) => s + r.contribution, 0) / received.length;
+  const avgProf =
+    received.reduce((s, r) => s + r.professionalism, 0) / received.length;
+  const combined = (avgCont + avgProf) / 2;
+  return { avgCont, avgProf, combined, ratingsReceived: received.length };
+}
+
 export function computeScore(
   received: Rating[],
   teamGrade: number | null,
